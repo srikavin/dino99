@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8"/>
+    <title>hello-wasm example</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-size: 24px;
+            font-family: 'monospace';
+        }
+
+        #canvas {
+            position: absolute;
+            display: none;
+        }
+
+        body {
+            display: grid;
+            place-items: center;
+            height: 100vh;
+        }
+
+        #root {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        button {
+            font-size: 2rem;
+            border: none;
+            cursor: pointer;
+            background-color: #527cf5;
+            border-radius: 12px;
+            color: white;
+            font-weight: 700;
+            padding: 6px 0;
+        }
+
+        h1 {
+            font-size: 4rem;
+        }
+
+        input {
+            font-size: 1.5rem;
+            text-align: center;
+            border-radius: 12px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas" tabindex="1"></canvas>
+<div id="root">
+    <h1>Dino 99</h1>
+    <!--    <input placeholder="Lobby Code" type="text"></input>-->
+    <button id="play-button">PLAY</button>
+</div>
+<script defer src="game.ts" type="module"></script>
+</body>
+</html>

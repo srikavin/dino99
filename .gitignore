@@ -1,2 +1,5 @@
 **/target
 .idea/
+frontend/dist
+frontend/.parcel-cache
+frontend/node_modules

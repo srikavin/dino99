@@ -1,0 +1,31 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "source": "src/index.html",
+  "scripts": {
+    "start": "parcel serve --no-cache",
+    "build": "parcel build"
+  },
+  "targets": {
+    "default": {
+      "context": "browser",
+      "outputFormat": "esmodule",
+      "engines": {
+        "browsers": "> 0.5%, last 2 versions, not dead"
+      }
+    }
+  },
+  "alias": {
+    "websocket": "./src/websocket.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "parcel": "^2.8.2",
+    "parcel-reporter-static-files-copy": "^1.4.0"
+  },
+  "dependencies": {
+    "typescript": "^4.9.4"
+  }
+}
