@@ -32,15 +32,37 @@ pub struct BoundingBox {
 trait Collidable {
     fn collision_box(&self) -> BoundingBox;
     fn position(&self) -> Position;
+}
 
-    fn is_colliding(a: &Self, b: &Self) {}
+fn is_colliding(a: &dyn Collidable, b: &dyn Collidable) -> bool {
+    let a_collision = a.collision_box();
+    let a_position = a.position();
+
+    let (ax0, ax1, ay0, ay1) = (
+        a_position.x,
+        a_position.x + a_collision.w as i32,
+        a_position.y,
+        a_position.y + a_collision.h as i32,
+    );
+
+    let b_collision = b.collision_box();
+    let b_position = b.position();
+
+    let (bx0, bx1, by0, by1) = (
+        b_position.x,
+        b_position.x + b_collision.w as i32,
+        b_position.y,
+        b_position.y + b_collision.h as i32,
+    );
+
+    return ax0 <= bx1 && ax1 >= bx0 && ay0 <= by1 && ay1 >= by0;
 }
 
 impl Collidable for GameObstacle {
     fn collision_box(&self) -> BoundingBox {
         match self.category {
             GameObstacleCategory::Cactus => BoundingBox { w: 32, h: 32 },
-            GameObstacleCategory::Bird => BoundingBox { w: 32, h: 32 },
+            GameObstacleCategory::Bird => BoundingBox { w: 46, h: 30 },
         }
     }
 
@@ -79,6 +101,7 @@ pub struct GameState {
     pub player: GamePlayer,
     pub obstacles: VecDeque<GameObstacle>,
     pub tick: u64,
+    pub is_game_over: bool,
 }
 
 impl GamePlayer {
@@ -117,20 +140,34 @@ impl GameState {
                 jump_tick: 0,
                 peak_jump_tick: 0,
                 is_ducked: false,
-                speed: 50,
+                speed: 5,
             },
             obstacles: VecDeque::new(),
             tick: 0,
+            is_game_over: false,
         };
     }
 
+    fn handle_collisions(&mut self) {
+        for x in &self.obstacles {
+            if is_colliding(&self.player, x) {
+                self.is_game_over = true;
+                break;
+            }
+        }
+    }
+
     pub fn tick(&mut self, input: Input) {
+        if self.is_game_over {
+            return;
+        }
+
         self.player.handle_input(input);
 
         if self.player.jump_tick < self.player.peak_jump_tick {
             self.player.y += 10;
             self.player.jump_tick += 1;
-        } else if self.player.jump_tick < self.player.peak_jump_tick * 2 {
+        } else if self.player.jump_tick + 1 < self.player.peak_jump_tick * 2 {
             self.player.y -= 10;
             self.player.jump_tick += 1;
         } else {
@@ -140,7 +177,7 @@ impl GameState {
         }
 
         while let Some(x) = self.obstacles.front() {
-            if x.position.x < self.player.speed as i32 {
+            if x.position.x < -(x.collision_box().w as i32) {
                 self.obstacles.pop_front();
                 continue;
             }
@@ -148,7 +185,7 @@ impl GameState {
         }
 
         for x in &mut self.obstacles {
-            x.position.x = x.position.x - min(x.position.x, self.player.speed as i32);
+            x.position.x = x.position.x - (self.player.speed as i32);
         }
 
         while self.obstacles.len() < 16 {
@@ -160,6 +197,8 @@ impl GameState {
                 },
             })
         }
+
+        self.handle_collisions();
 
         self.tick += 1;
     }

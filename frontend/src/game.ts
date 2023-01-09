@@ -11,6 +11,7 @@ init().then(() => {
 type GameState = {
     score: number,
     tick: number,
+    is_game_over: boolean,
     player: {
         y: number,
         is_ducked: boolean
@@ -61,7 +62,6 @@ const setupCanvas = (drawFn: (dt: number, h: number, w: number, ctx: CanvasRende
         }
         let timestamp = Date.now();
 
-        console.log('tickDelta', timestamp - lastTick)
         client.tick(lastInput);
         lastTick = timestamp;
 
@@ -129,8 +129,8 @@ setupCanvas((dt, h, w, ctx, canvas, totalTime) => {
         ctx.drawImage(image, x, y - image.height);
     }
 
-    const renderAnimation = (animation: Animation, x, y) => {
-        const curFrameIdx = Math.floor((totalTime / animation.frameTimeMs)) % animation.frames.length;
+    const renderAnimation = (animation: Animation, x, y, isGameOver = false) => {
+        const curFrameIdx = isGameOver ? 0 : Math.floor((totalTime / animation.frameTimeMs)) % animation.frames.length;
         const curFrame = animation.frames[curFrameIdx];
         renderImage(curFrame, x, y);
     }
@@ -150,7 +150,6 @@ setupCanvas((dt, h, w, ctx, canvas, totalTime) => {
     const fps = Math.round(1000 / dt);
 
     const renderState = client.game_state() as GameStateReturn;
-    console.log(renderState)
 
     if (renderState === null) {
         drawText(`Connecting to Lobby Server` + '.'.repeat((totalTime / 300) % 4), w / 2, h / 2, {
@@ -175,24 +174,30 @@ setupCanvas((dt, h, w, ctx, canvas, totalTime) => {
 
         let realY = GAME_HEIGHT - gameY;
 
-        ctx.strokeStyle = 'gray';
-        ctx.strokeRect(0, 0, GAME_WIDTH, GAME_HEIGHT + 5);
-        ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT + 5);
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-        ctx.drawImage(sprites.ground, (localState.tick * 10) % (sprites.ground.width - GAME_WIDTH), 0, GAME_WIDTH, sprites.ground.height, 0, GAME_HEIGHT - 15, GAME_WIDTH, sprites.ground.height);
+        ctx.strokeStyle = 'gray';
+        ctx.strokeRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+        ctx.beginPath()
+        ctx.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        ctx.clip()
+
+        ctx.drawImage(sprites.ground, (render_state.tick * 10) % (sprites.ground.width - GAME_WIDTH), 0, GAME_WIDTH, sprites.ground.height, 0, GAME_HEIGHT - 15, GAME_WIDTH, sprites.ground.height);
 
         if (localState.tick == 0) {
             renderImage(sprites.stand, DINO_X, realY);
         } else if (is_ducked) {
-            renderAnimation(animations.duck, DINO_X, realY);
+            renderAnimation(animations.duck, DINO_X, realY, render_state.is_game_over);
         } else {
-            renderAnimation(animations.run, DINO_X, realY);
+            renderAnimation(animations.run, DINO_X, realY, render_state.is_game_over);
         }
 
         for (let i = 0; i < 5; ++i) {
-            let offset = (i * 71) % GAME_WIDTH;
+            let offset = (i * 128) % GAME_WIDTH;
             let x = (offset + totalTime / (-100 - i * 5));
-            if (x < 0) {
+            if (x < -sprites.cloud.width) {
                 x += GAME_WIDTH - sprites.cloud.width;
             }
             renderImage(sprites.cloud, x, 15 + 10 * (i * 31 % 7))
@@ -202,11 +207,19 @@ setupCanvas((dt, h, w, ctx, canvas, totalTime) => {
             if (obstacle.position.x > GAME_WIDTH) continue;
             if (obstacle.position.y > GAME_HEIGHT) continue;
             if (obstacle.category === 'Bird') {
-                renderAnimation(animations.bird, obstacle.position.x, obstacle.position.y);
+                renderAnimation(animations.bird, obstacle.position.x, obstacle.position.y, render_state.is_game_over);
             }
             if (obstacle.category === 'Cactus') {
                 renderImage(sprites.small_cactus1, obstacle.position.x, obstacle.position.y);
             }
+        }
+
+        if (render_state.is_game_over) {
+            ctx.fillStyle = 'gray';
+            ctx.globalAlpha = 0.3;
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT + 5);
+            ctx.globalAlpha = 1;
+            drawText("GAME OVER", GAME_WIDTH / 2, GAME_HEIGHT / 2, {xalign: "center", style: "40px monospace"});
         }
     }
 
