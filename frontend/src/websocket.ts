@@ -1,19 +1,31 @@
-export let ws = new WebSocket("ws://localhost:8080/ws/")
+export let ws: WebSocket = undefined;
 let sendQueue = [];
 let messageHandlers = new Map();
 let allMessageHandler: CallableFunction = console.log;
 
-ws.onopen = () => {
-    for (let item of sendQueue) {
-        ws.send(item);
-    }
-}
+reconnect();
 
-ws.onmessage = (e) => {
-    allMessageHandler(e.data);
-    if (messageHandlers.has(e.data.type)) {
-        messageHandlers.get(e.data.type)(JSON.parse(e.data));
+const websocketEndpoint = location.hostname == 'localhost' ?
+    'ws://localhost:4052' :
+    `ws://${location.host}`;
+
+export function reconnect(): WebSocket {
+    ws = new WebSocket(websocketEndpoint);
+
+    ws.onopen = () => {
+        for (let item of sendQueue) {
+            ws.send(item);
+        }
     }
+
+    ws.onmessage = (e) => {
+        allMessageHandler(e.data);
+        if (messageHandlers.has(e.data.type)) {
+            messageHandlers.get(e.data.type)(JSON.parse(e.data));
+        }
+    }
+
+    return ws;
 }
 
 export function sendMessage(msg: string) {
