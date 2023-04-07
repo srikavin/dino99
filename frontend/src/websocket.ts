@@ -3,11 +3,11 @@ let sendQueue = [];
 let messageHandlers = new Map();
 let allMessageHandler: CallableFunction = console.log;
 
-reconnect();
-
 const websocketEndpoint = location.hostname == 'localhost' ?
-    'ws://localhost:4052' :
-    `ws://${location.host}`;
+    'ws://localhost:8080/ws/' :
+    `${location.origin.replace('http', 'ws')}/ws/`;
+
+reconnect();
 
 export function reconnect(): WebSocket {
     ws = new WebSocket(websocketEndpoint);
