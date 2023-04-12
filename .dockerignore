@@ -1,0 +1,6 @@
+frontend/node_modules
+frontend/dist
+frontend/.parcel-cache
+client/target
+game/target
+server/target
